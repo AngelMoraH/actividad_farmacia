@@ -237,7 +237,6 @@ def remove_producto_pedido(pedido_id: int, producto_id: int, db: Session = Depen
     return db_pedido
 
 
-
 @app.put("/pedidos/{pedido_id}", response_model=schemas.Pedido)
 def update_pedido(pedido_id: int, pedido: schemas.PedidoCreate, db: Session = Depends(get_db)):
     db_pedido = crud.get_pedido(db, id=pedido_id)
