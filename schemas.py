@@ -17,12 +17,12 @@ class FarmaceuticoCreate(BaseModel):
 
 class Producto(BaseModel):
     id: int
-    nombre: str
-    fecha_caducidad: str
-    precio: float
-    stock : int
-    almacen_id: int
-    pedido_id : int
+    nombre: str | None = None
+    fecha_caducidad: str | None = None
+    precio: float | None = None
+    stock : int | None = None
+    almacen_id: int | None = None
+    pedido_id : int | None = None
 
     class Config:
         orm_mode = True
