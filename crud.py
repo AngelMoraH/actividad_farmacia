@@ -74,9 +74,12 @@ def get_producto(db: Session, id: int):
 
 def get_productos(db: Session, skip: int = 0, limit: int = 100):
     return db.query(models.Producto).offset(skip).limit(limit).all()
+def get_productos_by_name(db: Session, nombre: str):
+    return db.query(models.Producto).filter(models.Producto.nombre.contains(nombre)).all()
 
 def add_producto(db: Session, producto: schemas.ProductoCreate):
     db_producto = models.Producto(nombre=producto.nombre, fecha_caducidad=producto.fecha_caducidad, precio=producto.precio, stock=producto.stock, almacen_id=producto.almacen_id, pedido_id = producto.pedido_id)
+    print(db_producto)
     db.add(db_producto)
     db.commit()
     db.refresh(db_producto)

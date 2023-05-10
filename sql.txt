@@ -1,0 +1,19 @@
+
+	
+INSERT INTO public.clientes(nombre,saldo) VALUES ('angel',200);
+
+INSERT INTO public.farmaceuticos(nombre, genero)
+	VALUES ('f1', 'M');
+
+SELECT * FROM public.clientes, public.farmaceuticos;
+
+SELECT * FROM public.productos;
+DELETE FROM public.productos WHERE id=2;
+INSERT INTO public.pedidos(cliente_id,farmaceutico_id,cantidad,total,fecha)
+	VALUES (4,1,2,20,'09-05-2023');
+	
+SELECT * FROM public.almacenes;
+
+SELECT * FROM public.pedidos;
+DELETE FROM public.pedidos
+	WHERE id=1;

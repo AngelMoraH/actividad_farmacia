@@ -1,4 +1,5 @@
 from fastapi import Depends, FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 import crud
 import models
@@ -9,7 +10,13 @@ from database import SessionLocal, engine
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
-
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Dependency
 def get_db():
@@ -135,6 +142,21 @@ def update_almacen(almacen_id: int, almacen: schemas.AlmacenCreate, db: Session 
     db.refresh(db_almacen)
     return db_almacen
 
+@app.put("/almacenes/{almacen_id}/remove_producto/{producto_id}", response_model=schemas.Almacen)
+def remove_producto_almacen(almacen_id: int, producto_id: int, db: Session = Depends(get_db)):
+    db_almacen = crud.get_almacen(db, id=almacen_id)
+    if db_almacen is None:
+        raise HTTPException(status_code=404, detail="Pedido no encontrado")
+    db_producto = crud.get_producto(db, id=producto_id)
+    if db_producto is None:
+        raise HTTPException(status_code=404, detail="Producto no encontrado")
+    db_producto.pedido_id = None
+    db_almacen.productos.remove(db_producto)
+    db.commit()
+    db.refresh(db_almacen)
+    db.refresh(db_producto)
+    return db_almacen
+
 @app.delete("/almacenes/{almacen_id}", response_model=schemas.Almacen)
 def delete_almacen(almacen_id: int, db: Session = Depends(get_db)):
     db_almacen = crud.get_almacen(db, id=almacen_id)
@@ -145,14 +167,21 @@ def delete_almacen(almacen_id: int, db: Session = Depends(get_db)):
     return db_almacen
 
 
+
 # productos endpoints
 @app.post("/productos", response_model=schemas.Producto)
 def create_producto(productoschema: schemas.ProductoCreate, db: Session = Depends(get_db)):
+    print("entra al endpoint")
     return crud.add_producto(db=db, producto=productoschema)
 
 @app.get("/productos", response_model=list[schemas.Producto])
 def read_productos(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     productos = crud.get_productos(db, skip=skip, limit=limit)
+    return productos
+
+@app.get("/productos/{producto_name}", response_model=list[schemas.Producto])
+def read_productos_by_name(producto_name: str, db: Session = Depends(get_db)):
+    productos = crud.get_productos_by_name(db, nombre=producto_name)
     return productos
 
 @app.get("/productos/{producto_id}", response_model=schemas.Producto)
@@ -161,6 +190,29 @@ def read_producto(producto_id: int, db: Session = Depends(get_db)):
     if db_producto is None:
         raise HTTPException(status_code=404, detail="Producto no encontrado")
     return db_producto
+
+@app.get("/productos/add_stock/{producto_id}", response_model=schemas.Producto)
+def add_stock(producto_id: int, db: Session = Depends(get_db)):
+    db_producto = crud.get_producto(db, id=producto_id)
+    if db_producto is None:
+        raise HTTPException(status_code=404, detail="Producto no encontrado")
+    db_producto.stock = db_producto.stock + 1
+    db.commit()
+    db.refresh(db_producto)
+    return db_producto
+
+@app.get("/productos/remove_stock/{producto_id}", response_model=schemas.Producto)
+def remove_stock(producto_id: int, db: Session = Depends(get_db)):
+    db_producto = crud.get_producto(db, id=producto_id)
+    if db_producto is None:
+        raise HTTPException(status_code=404, detail="Producto no encontrado")
+    if db_producto.stock == 0:
+        raise HTTPException(status_code=404, detail="Producto agotado")
+    db_producto.stock = db_producto.stock - 1
+    db.commit()
+    db.refresh(db_producto)
+    return db_producto
+
 
 @app.put("/productos/{producto_id}", response_model=schemas.Producto)
 def update_producto(producto_id: int, producto: schemas.ProductoCreate, db: Session = Depends(get_db)):
@@ -213,6 +265,8 @@ def add_producto_pedido(pedido_id: int, producto_id: int, db: Session = Depends(
     db_producto = crud.get_producto(db, id=producto_id)
     if db_producto is None:
         raise HTTPException(status_code=404, detail="Producto no encontrado")
+    if(db_producto.stock == 0):
+        raise HTTPException(status_code=404, detail="Producto agotado")
     db_producto.pedido_id = pedido_id
     db_producto.stock = db_producto.stock - 1
     db_pedido.productos.append(db_producto)
