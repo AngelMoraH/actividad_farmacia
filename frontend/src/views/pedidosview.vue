@@ -5,14 +5,14 @@ import Producto from '../components/Producto.vue';
 const allpedidos = reactive([]);
 
 onMounted(() => {
-    console.log(new Date(Date.now()).toISOString().slice(0, 10));
     getAllPedidos();
 });
 
 const add_producto_pedido = ref(false);
+const add_pedido_popup = ref(false);
 const producto_name = ref("");
 const productos_pedidos = ref([]);
-
+const cliente_id = ref("");
 const getAllPedidos = () => {
     fetch("http://127.0.0.1:8000/pedidos")
         .then((response) => response.json())
@@ -20,6 +20,13 @@ const getAllPedidos = () => {
             allpedidos.value = data;
             console.log("data pedido: ", allpedidos.value);
         });
+}
+
+const changeValue2 = () => {
+    add_pedido_popup.value = !add_pedido_popup.value;
+    if(add_pedido_popup.value == false){
+        cliente_id.value = "";
+    }
 }
 
 const changeValue = () => {
@@ -32,8 +39,11 @@ const changeValue = () => {
 
 const getProductByName = (e) => {
     console.log("e.target.value: ", e.target.value);
-    // productos/{producto_name}
-    fetch(`http://127.0.0.1:8000/productos/${e.target.value}`)
+    let value = e.target.value;
+    if(value == ""||value.includes(" ")){
+        productos_pedidos.value=[];
+    }else{
+        fetch(`http://127.0.0.1:8000/productos/${e.target.value}`)
         .then((response) => response.json())
         .then(
             (data) => {
@@ -42,6 +52,9 @@ const getProductByName = (e) => {
                 console.log("productos almacen", productos_pedidos.value);
             }
         );
+    }
+    // productos/{producto_name}
+    
 }
 
 const add = async (pedido_id, producto_id) => {
@@ -52,6 +65,7 @@ const add = async (pedido_id, producto_id) => {
         },
     }).then((response) => response.json()).then((data) => {
         getAllPedidos();
+        changeValue2();
     });
 }
 const remove = async (pedido_id, producto_id) => {
@@ -63,10 +77,10 @@ const remove = async (pedido_id, producto_id) => {
     }).then((response) => response.json()).then((data) => {
         getAllPedidos();
     });
-    
+
 }
 const remove_pedido = async (pedido_id) => {
-    fetch(`http://127.0.0.1:8000/pedidos/${pedido_id}`,{
+    fetch(`http://127.0.0.1:8000/pedidos/${pedido_id}`, {
         method: 'DELETE',
         headers: {
             'Content-Type': 'application/json'
@@ -76,6 +90,21 @@ const remove_pedido = async (pedido_id) => {
     });
 }
 
+const cobrar_pedido = async (pedido_id, cliente_id, total) => {
+    fetch(`http://127.0.0.1:8000/clientes/${cliente_id}/remove_saldo/${total}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+    }).then((response) => response.json()).then((data) => {
+        console.log("data: ", data);
+        remove_pedido(pedido_id);
+        if (data.detail == 'Saldo insuficiente') {
+            alert("Saldo insuficiente");
+        }
+    })
+}
+
 const add_pedido = async () => {
     fetch("http://127.0.0.1:8000/pedidos", {
         method: 'POST',
@@ -83,7 +112,7 @@ const add_pedido = async () => {
             'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-            "cliente_id": 4,
+            "cliente_id": cliente_id.value,
             "farmaceutico_id": 1,
             "cantidad": 0,
             "total": 0,
@@ -92,6 +121,7 @@ const add_pedido = async () => {
         })
     }).then((response) => response.json()).then((data) => {
         getAllPedidos();
+        changeValue();
     });
 }
 
@@ -101,7 +131,17 @@ const add_pedido = async () => {
     <div>
         <div class="div_pedidos__title">
             <h1>Pedidos</h1>
-            <button @click="add_pedido()">add</button>
+            <button @click="changeValue2()">add</button>
+            <div style="height: 15rem;" :class="add_pedido_popup == true ? 'popup_productos__show' : 'popup_productos__hide'">
+                <div class="div_input__popup_2">
+                    <span>Id cliente</span>
+                    <input type="text" v-model="cliente_id" placeholder="ingrese el Id del cliente" />
+                    <div class="div_popup__actions">
+                        <button @click="changeValue2()">cerrar</button>
+                        <button @click="add_pedido()">add</button>
+                    </div>
+                </div>
+            </div>
         </div>
         <div class="div_pedidos" v-for="pedido in allpedidos.value" :key="pedido.id">
             <div :class="add_producto_pedido == true ? 'popup_productos__show' : 'popup_productos__hide'">
@@ -115,11 +155,12 @@ const add_pedido = async () => {
                         <Producto :restante="false" :id="producto.id" :nombre="producto.nombre" :precio="producto.precio"
                             :fecha_caducidad="producto.fecha_caducidad" :stock="producto.stock" />
                         <span class="add_button" @click="add(pedido.id, producto.id)">
-                            add 
+                            add
                         </span>
                     </div>
                 </div>
             </div>
+            <PopupPedido :add_producto_pedido="add_producto_pedido" :get-all-pedidos="getAllPedidos" />
             <div class="container_pedidos">
                 <div class="info_pedido">
                     <p>Fecha: {{ pedido.fecha }}</p>
@@ -133,8 +174,9 @@ const add_pedido = async () => {
                         <span>Productos: </span>
                         <button @click="changeValue()">add</button>
                         <button @click="remove_pedido(pedido.id)">remove</button>
+                        <button @click="cobrar_pedido(pedido.id, pedido.cliente_id, pedido.total)">cobrar</button>
                     </div>
-                    <hr>
+                    <hr/>
                     <div v-for="producto in pedido.productos" :key="producto.id">
                         <Producto :restante="true" :id="producto.id" :nombre="producto.nombre" :precio="producto.precio"
                             :fecha_caducidad="producto.fecha_caducidad" :stock="producto.stock" />
@@ -162,17 +204,20 @@ const add_pedido = async () => {
     border-radius: 10px;
     margin: 0 auto;
 }
+
 hr {
     width: 100%;
     border: 1px solid #fff;
 }
-.container_actions__pedidos{
+
+.container_actions__pedidos {
     display: flex;
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
-    width: 16rem;
+    width: 20rem;
 }
+
 .div_pedidos__title {
     display: flex;
     flex-direction: row;
@@ -180,9 +225,11 @@ hr {
     align-items: center;
     width: 100%;
 }
-.div_pedidos__title button{
+
+.div_pedidos__title button {
     background-color: #474dbe;
 }
+
 .info_pedido {
     display: flex;
     width: 100%;
@@ -197,6 +244,14 @@ hr {
     flex-direction: column;
     justify-content: flex-start;
     align-items: flex-start;
+}
+
+.div_input__popup_2 {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+    align-items: center;
 }
 
 .container_productos_pedidos button {
@@ -215,12 +270,14 @@ hr {
     justify-content: center;
     align-items: center;
 }
+
 .container_productos_pedidos div {
     display: flex;
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
 }
+
 .div_producto div {
     display: flex;
     flex-direction: row;
@@ -236,6 +293,13 @@ hr {
     border-radius: 0.5em;
     font-size: 15pt;
     margin: 1em;
+}
+.div_popup__actions {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    width: 10rem;
 }
 
 .add_producto {
@@ -308,5 +372,4 @@ hr {
     outline: none;
     padding: 0.5em;
     font-size: 1.2em;
-}
-</style>
+}</style>

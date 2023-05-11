@@ -1,7 +1,6 @@
 <script setup>
 import Producto from '../components/Producto.vue';
 import { reactive, ref } from 'vue';
-import { defineProps } from 'vue'
 
 const func = defineProps({
     getAllProducts: Function,
@@ -81,9 +80,13 @@ const add_producto = async () => {
     <div>
         <div :class="add_producto_pedido == true ? 'popup_productos__show' : 'popup_productos__hide'">
             <div class="div_input__popup">
+                <span>nombre</span>
                 <input type="text" v-model="nombre" placeholder="ingrese el producto" />
+                <span>vencimiento</span>
                 <input type="date" v-model="fecha"  placeholder="ingrese la fecha de vencimiento" />
+                <span>precio</span>
                 <input type="number" v-model="precio" placeholder="ingrese el precio" />
+                <span>stock</span>
                 <input type="number" v-model="stock"  placeholder="ingrese el stock" />
                 <div class="div_popup__actions">
                     <button @click="changeValue()">cerrar</button>

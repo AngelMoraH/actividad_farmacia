@@ -13,7 +13,7 @@ def get_cliente_by_name(db: Session, nombre: str):
 
 
 def get_clientes(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(models.cliente).offset(skip).limit(limit).all()
+    return db.query(models.cliente).order_by(models.cliente.id.asc()).offset(skip).limit(limit).all()
 
 
 def add_cliente(db: Session, cliente: schemas.ClienteCreate):
@@ -32,7 +32,7 @@ def get_farmaceutico_by_name(db: Session, nombre: str):
     return db.query(models.Farmacuetico).filter(models.Farmacuetico.nombre == nombre).first()
 
 def get_farmaceuticos(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(models.Farmacuetico).offset(skip).limit(limit).all()
+    return db.query(models.Farmacuetico).order_by(models.Farmacuetico.id.asc()).offset(skip).limit(limit).all()
 
 def add_farmaceutico(db: Session, farmaceutico: schemas.FarmaceuticoCreate):
     db_farmaceutico = models.Farmacuetico(nombre=farmaceutico.nombre, genero=farmaceutico.genero)
@@ -52,7 +52,7 @@ def get_almacen(db: Session, id: int):
     return almacen
 
 def get_almacenes(db: Session, skip: int = 0, limit: int = 100):
-    almacenes = db.query(models.Almacen).offset(skip).limit(limit).all()
+    almacenes = db.query(models.Almacen).order_by(models.Almacen.id.asc()).offset(skip).limit(limit).all()
     for almacen in almacenes:
         almacen.productos = db.query(models.Producto).filter(models.Producto.almacen_id == almacen.id).all()
         almacen.cantidad = len(almacen.productos)
@@ -73,9 +73,10 @@ def get_producto(db: Session, id: int):
     return db.query(models.Producto).filter(models.Producto.id == id).first()
 
 def get_productos(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(models.Producto).offset(skip).limit(limit).all()
+    return db.query(models.Producto).order_by(models.Producto.id.asc()).offset(skip).limit(limit).all()
+
 def get_productos_by_name(db: Session, nombre: str):
-    return db.query(models.Producto).filter(models.Producto.nombre.contains(nombre)).all()
+    return db.query(models.Producto).filter(models.Producto.nombre.contains(nombre) ).all()
 
 def add_producto(db: Session, producto: schemas.ProductoCreate):
     db_producto = models.Producto(nombre=producto.nombre, fecha_caducidad=producto.fecha_caducidad, precio=producto.precio, stock=producto.stock, almacen_id=producto.almacen_id, pedido_id = producto.pedido_id)
@@ -84,6 +85,31 @@ def add_producto(db: Session, producto: schemas.ProductoCreate):
     db.commit()
     db.refresh(db_producto)
     return db_producto
+
+
+def add_productos(db: Session):
+    res=[]
+    productos = [
+        ["Diutin Protein", "2023-11-11", 70, 30, 1,None],
+        ["ASPIRINA 100 MG", "2023-11-11", 6.40, 20, 1,None],
+        ["TUKOL-D","2023-11-11", 20.15, 10, 1,None],
+        ["NIKZON","2023-11-11", 14.10, 50, 1,None],
+        ["BISMUTOL","2023-11-11", 28.90, 50, 1,None],
+        ["CIRUELAX","2023-11-11", 19.90, 20, 1,None],
+        ["Panadol","2023-11-11", 10.20, 20, 1,None],
+        ["Amoxicilina","2023-11-11", 19.90, 20, 1,None],
+        ["CICATRICURE","2023-11-11", 63.59, 30, 1,None],
+        ["SILKA MEDIC","2023-11-11", 24.34, 20, 1,None]
+    ]
+
+    for i in range(10):
+        db_producto = models.Producto(nombre=productos[i][0], fecha_caducidad=productos[i][1], precio=productos[i][2], stock=productos[i][3], almacen_id=productos[i][4], pedido_id = None)
+        db.add(db_producto)
+        db.commit()
+        db.refresh(db_producto)
+        res.append(db_producto)
+    
+    return res
 
 # pedidos controllers
 def get_pedido(db: Session, id: int):
@@ -102,7 +128,7 @@ def get_pedido(db: Session, id: int):
         return pedido
 
 def get_pedidos(db: Session, skip: int = 0, limit: int = 100):
-    pedidos = db.query(models.Pedido).offset(skip).limit(limit).all()
+    pedidos = db.query(models.Pedido).order_by(models.Pedido.id.asc()).offset(skip).limit(limit).all()
     for pedido in pedidos:
         pedido.productos = db.query(models.Producto).filter(models.Producto.pedido_id == pedido.id).all()
         pedido.cantidad = len(pedido.productos)

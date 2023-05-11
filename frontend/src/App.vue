@@ -3,6 +3,7 @@ import Producto from './components/Producto.vue';
 import { reactive, ref, onMounted } from 'vue';
 import Productos from './views/productosview.vue';
 import Pedidos from './views/pedidosview.vue';
+import Clientes from './views/clientesview.vue';
 const products = reactive([]);
 const all_products = reactive([]);
 const productos_almacen = reactive([]);
@@ -161,7 +162,7 @@ const remove = async (id) => {
         <Pedidos />
     </div>
     <div class="container" v-else-if="opcion == 4">
-        <h1>Clientes</h1>
+        <Clientes />
     </div>
 </template>
 

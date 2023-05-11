@@ -26,12 +26,16 @@ def get_db():
     finally:
         db.close()
 
+@app.get("/",response_model=list[schemas.Producto])
+def add_productos_all(db: Session = Depends(get_db)):
+    return crud.add_productos(db)
+
 # clientes endpoints
 @app.post("/clientes", response_model=schemas.Cliente)
 def create_cliente(clienteschema: schemas.ClienteCreate, db: Session = Depends(get_db)):
     db_cliente = crud.get_cliente_by_name(db, nombre=clienteschema.nombre)
     if db_cliente:
-        raise HTTPException(status_code=400, detail="Email already registered")
+        raise HTTPException(status_code=400, detail="cliente already registered")
     return crud.add_cliente(db=db, cliente=clienteschema)
 
 
@@ -59,6 +63,19 @@ def update_cliente(cliente_id: int, cliente: schemas.ClienteCreate, db: Session 
     db.refresh(db_cliente)
     return db_cliente
 
+
+@app.put("/clientes/{cliente_id}/remove_saldo/{saldo}", response_model=schemas.Cliente)
+def remove_saldo(cliente_id: int, saldo: float, db: Session = Depends(get_db)):
+    db_cliente = crud.get_cliente(db, id=cliente_id)
+    if db_cliente is None:
+        raise HTTPException(status_code=404, detail="Cliente no encontrado")
+    if db_cliente.saldo < saldo:
+        raise HTTPException(status_code=404, detail="Saldo insuficiente")
+    db_cliente.saldo = db_cliente.saldo - saldo
+    db.commit()
+    db.refresh(db_cliente)
+    return db_cliente
+
 @app.delete("/clientes/{cliente_id}", response_model=schemas.Cliente)
 def delete_user(cliente_id: int, db: Session = Depends(get_db)):
 
@@ -77,7 +94,7 @@ def delete_user(cliente_id: int, db: Session = Depends(get_db)):
 def create_farmaceutico(farmaceuticoschema: schemas.FarmaceuticoCreate, db: Session = Depends(get_db)):
     db_farmaceutico = crud.get_farmaceutico_by_name(db, nombre=farmaceuticoschema.nombre)
     if db_farmaceutico:
-        raise HTTPException(status_code=400, detail="Email already registered")
+        raise HTTPException(status_code=400, detail="Farmaceutico already registered")
     return crud.add_farmaceutico(db=db, farmaceutico=farmaceuticoschema)
 
 @app.get("/farmaceuticos", response_model=list[schemas.Farmaceutico])
