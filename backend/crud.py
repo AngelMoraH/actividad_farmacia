@@ -88,6 +88,7 @@ def add_producto(db: Session, producto: schemas.ProductoCreate):
 
 
 def add_productos(db: Session):
+    db_almacen = models.Almacen(cantidad=0)
     res=[]
     productos = [
         ["Diutin Protein", "2023-11-11", 70, 30, 1,None],
@@ -101,14 +102,22 @@ def add_productos(db: Session):
         ["CICATRICURE","2023-11-11", 63.59, 30, 1,None],
         ["SILKA MEDIC","2023-11-11", 24.34, 20, 1,None]
     ]
+    db.add(db_almacen)
+    db.commit()
+    db.refresh(db_almacen)
+
+    db_cliente = models.cliente(nombre="Juan Perez", saldo=1000)
+    db.add(db_cliente)
+    db.commit()
+    db.refresh(db_cliente)
 
     for i in range(10):
         db_producto = models.Producto(nombre=productos[i][0], fecha_caducidad=productos[i][1], precio=productos[i][2], stock=productos[i][3], almacen_id=productos[i][4], pedido_id = None)
         db.add(db_producto)
+        res.append(db_producto)
         db.commit()
         db.refresh(db_producto)
-        res.append(db_producto)
-    
+        
     return res
 
 # pedidos controllers
