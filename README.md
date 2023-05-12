@@ -7,3 +7,5 @@
 | Sotomayor    | Jean Pierre | 202110660   | 
 | Sara    | Juan Sebastian |  202010400  |
 |  Avendaño  | Matias |    |
+
+# Correr la ruta http://localhost:8000/ para inicializar la data
