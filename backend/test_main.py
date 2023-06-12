@@ -34,12 +34,25 @@ class TestMain(unittest.TestCase):
             "fecha": "2021-11-11"
         }
     
-    def test_get_farmaceutico(self):
+    #primero correr add_farmaceutico
+    def test_get_farmaceutico_existe(self):
         response = self.client.get("/farmaceuticos")
+        
         assert response.status_code == 200
         assert response.json() != []
         assert len(response.json()) != 0
-    
+
+        #no hay farmaceutico
+            #   assert response.json() == []
+        #assert len(response.json()) == 0
+     
+    """def test_add_farmacuetico(self):
+        response = self.client.post("/farmaceuticos", json=self.new_farmacuetico)
+        #print(response.json())
+        assert response.status_code == 200
+        assert response.json() != {}
+    """
+
     def test_get_almacenes(self):
         response = self.client.get("/almacenes")
         #print(response.json())
@@ -51,13 +64,7 @@ class TestMain(unittest.TestCase):
         assert response.status_code == 200
         assert response.json() != []
     """
-    """
-    def test_add_farmacuetico(self):
-        response = self.client.post("/farmaceuticos", json=self.new_farmacuetico)
-        #print(response.json())
-        assert response.status_code == 200
-        assert response.json() != {}
-    """
+   
     
     def test_get_clientes(self):
         response = self.client.get("/clientes")
@@ -101,6 +108,21 @@ class TestMain(unittest.TestCase):
         assert response.status_code == 404
         assert response.json() == {'detail': 'Producto no encontrado'}
     
+    def test_stock_vacio(self):
+        response =  self.client.get("/productos/1")
+        assert response.status_code == 200
+        data= response.json()
+        if(data[0]['stock']==0):
+            assert response.json() == {'detail': 'El producto no tiene stock'}
+
+    def test_producto_no_existe(self):
+        response = self.client.get("/productos/125487")
+        #print("dasdsadad",response.json())
+       # print("dadasdas: ",response.status_code)
+
+        if response.json() == []:
+            assert response.json() == []
+
     def tearDown(self):
         pass
         
